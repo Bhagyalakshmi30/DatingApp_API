@@ -1,4 +1,5 @@
-﻿using DatingApp.Data;
+﻿using AutoMapper;
+using DatingApp.Data;
 using DatingApp.DTO;
 using DatingApp.Interface;
 using DatingApp.Models;
@@ -20,7 +21,7 @@ namespace DatingApp.Controllers
         private readonly DataContext _context;
         private readonly ITokenService _tokenService;
 
-        public AccountController(DataContext context, ITokenService tokenService)
+        public AccountController(DataContext context, ITokenService tokenService ,IMapper mapper)
         {
             
             _context = context;
@@ -65,7 +66,10 @@ namespace DatingApp.Controllers
         [HttpPost("login")] //POST : api/account/login
         public async Task<ActionResult<UserDto>> Login (LoginDto loginDto)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(x =>x.UserName== loginDto.Username);
+            var user = await _context.Users
+                .Include(p =>p.Photos)
+                
+                .SingleOrDefaultAsync(x =>x.UserName== loginDto.Username);
 
             if(user == null) 
             {
@@ -91,6 +95,8 @@ namespace DatingApp.Controllers
             {
                 Username = user.UserName,
                 Token = _tokenService.CreateToken(user),
+                PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
+                KnownAs = user.KnownAs,
 
             };
         }
